@@ -1,3 +1,5 @@
+package git.serialporttxrx.SerialPortTxRx;
+
 /*
 * This program uses Java Simple Serial Connector library.
 * The official repo for this library is at:
@@ -12,3 +14,17 @@
 * where the jssc.jar folder is located.
 */
 import jssc.SerialPortList;
+
+public class JavaListSerialPorts
+{
+	public static void main(String[] args)
+	{
+		//getPortNames() returns an array of strings
+		String[] portNames = SerialPortList.getPortNames();
+		int portNamesLength = portNames.length;
+		for(int i = 0; i < portNamesLength; i++)
+		{
+			System.out.println(portNames[i]);
+		}
+	}
+}
