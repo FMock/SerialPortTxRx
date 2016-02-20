@@ -12,6 +12,9 @@ package git.serialporttxrx.SerialPortTxRx;
 * Project\Properties\Java Build Path
 * On the Libraries tab click Add External Jars and browes to
 * where the jssc.jar folder is located.
+* Since most computers these days do not have serial ports
+* you can connect your serial device to your computer using
+* a USB to serial adapter
 */
 import jssc.SerialPortList;
 
