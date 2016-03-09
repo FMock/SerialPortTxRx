@@ -18,6 +18,18 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 
+/*
+ * This project uses the Java Simple Serial Connector library
+ * https://github.com/scream3r/java-simple-serial-connector.git
+ * 
+ * Usage: copy jssc.jar to your ..\java\jdk1.8._25\lib\ext
+ * and add the jar file to the project build path
+ * In Eclipse go to Project\Properties\Java Build Path
+ * on the Libraries tab click Add External Jars 
+ * and browse to where the jssc.jar folder is located
+ */
+
+
 //GUI setup and serial port info initialization
 public class SerialPortReader
 {
