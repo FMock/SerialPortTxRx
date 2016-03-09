@@ -1,4 +1,4 @@
-//object that holds current serial port info
+//The object that holds current serial port info
 public class SerialPortInfo
 {
 	private String commPort;
