@@ -29,7 +29,6 @@ import javax.swing.KeyStroke;
  * and browse to where the jssc.jar folder is located
  */
 
-
 //GUI setup and serial port info initialization
 public class SerialPortReader
 {
