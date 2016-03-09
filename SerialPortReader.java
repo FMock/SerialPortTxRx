@@ -38,7 +38,7 @@ public class SerialPortReader
 	public static void main(String[] args)
 	{
 		spi = new SerialPortInfo("COM3", 1200, 8, 1, 0);
-		
+		//build GUI
 		JFrame frame = new JFrame("Serial Data Reader");
 		frame.setSize(650, 700);
 		frame.setLayout(new BorderLayout());
