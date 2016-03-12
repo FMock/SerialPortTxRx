@@ -4,8 +4,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-
-import javax.swing.BorderFactory;
+//import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -15,8 +14,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
+//import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import jssc.SerialPort;
+import jssc.SerialPortException;
 
 /*
  * This project uses the Java Simple Serial Connector library
@@ -32,12 +33,21 @@ import javax.swing.KeyStroke;
 //GUI setup and serial port info initialization
 public class SerialPortReader
 {
-	private static Serial_Data_Model sdmodel;
-	private static SerialPortInfo spi;
+		static SerialSubject sdmodel;
+		static TextAreaView view;
+		static SerialPort serialPort;
+		
+		static SerialPortInfo spi; //Unnecessary?
+
 
 	public static void main(String[] args)
 	{
-		spi = new SerialPortInfo("COM3", 1200, 8, 1, 0);
+		sdmodel = new SerialSubject();
+		view = new TextAreaView(sdmodel);
+		serialPort = new SerialPort("COM3");
+		
+		spi = new SerialPortInfo("COM3", 1200, 8, 1, 0); //Unnecessary?
+
 		//build GUI
 		JFrame frame = new JFrame("Serial Data Reader");
 		frame.setSize(650, 700);
@@ -56,7 +66,7 @@ public class SerialPortReader
 					public void actionPerformed(ActionEvent e)
 					{
 						int i = comPortComboBox.getSelectedIndex();
-						spi = new SerialPortInfo("COM3", 1200, 8, 1, 0);
+						spi = new SerialPortInfo("COM3", 1200, 8, 1, 0); //Unnecessary?
 					}
 				});
 		
@@ -141,25 +151,44 @@ public class SerialPortReader
 				{
 					public void actionPerformed(ActionEvent ae)
 					{
-						sdmodel.getData();
+						try
+						{
+							serialPort.openPort();
+							serialPort.setParams(9600, 8, 1, 0);
+							while(serialPort.isOpened())
+							{
+								//send data to the model (aka subject)
+								sdmodel.setData(serialPort.readString());
+							}
+							//serialPort.closePort();//Close serial port
+						}
+						catch(SerialPortException ex)
+						{
+							System.out.println(ex);
+						}
 					}
 				});
 		
-		JButton clearDataButton = new JButton("Clear");
+		JButton clearDataButton = new JButton("Stop/Clear");
 		clearDataButton.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ae)
 					{
+						try
+						{
+							serialPort.closePort();
+						}
+						catch (SerialPortException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
 						//clear serial data text
-						sdmodel.clearEachView();
+						view.clear();
 					}
 				});
 		
-
-		TextAreaView view = new TextAreaView();
-		sdmodel = new Serial_Data_Model(spi);
-		sdmodel.addView(view);
 			
 		Box box1 = Box.createVerticalBox();
 		box1.add(view);
