@@ -1,5 +1,9 @@
 import java.util.Observable;
 
+/*
+ * Frank Mock
+ * Last Updated March 13, 2016
+ */
 
 public class SerialSubject extends Observable{
 	private String data;
