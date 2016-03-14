@@ -4,6 +4,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -15,6 +16,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 import jssc.SerialPort;
 import jssc.SerialPortException;
@@ -44,12 +46,46 @@ public class SerialPortReader implements Runnable
 		static SerialSubject sdmodel;
 		static TextAreaView view;
 		static SerialPort serialPort;
-		static SerialPortInfo spi; //Unnecessary?
+		static SerialPortInfo spi;
+		static JComboBox<Integer> baudRateComboBox;
+		static JComboBox<String> comPortComboBox;
+		static JComboBox<Integer> dataBitsComboBox;
+		static JComboBox<Integer> stopBitsComboBox;
+		static JComboBox<Integer> parityComboBox;
+		static ArrayList<String> listPortNames = new ArrayList<String>();
+		
+		//The available baud rates
+		static int[] baudRates = {1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
+		//The available data bits
+		static int[] dataBits = {5, 6, 7, 8, 9};
+		//The available parity bits
+		static int[] parityBits =  {0, 1};
+		//The available stop bits
+		static int[] stopBits = {0, 1};
 		
 		//Starts the thread that will initiate the reception of serial data
 		public void run()
 		{
 			getSerialData();
+		}
+		
+		public static void setParameters()
+		{
+			int i = comPortComboBox.getSelectedIndex();
+			int j = baudRateComboBox.getSelectedIndex();
+			int k = dataBitsComboBox.getSelectedIndex();
+			int l = stopBitsComboBox.getSelectedIndex();
+			int m = parityComboBox.getSelectedIndex();
+			spi = new SerialPortInfo(listPortNames.get(i), baudRates[j], dataBits[k], stopBits[l], parityBits[m]);
+			try
+			{
+				serialPort.setParams(spi.getBaudRate(), spi.getDataBits(), 
+				         			 spi.getParity(), spi.getStopBits());
+			}
+			catch (SerialPortException e)
+			{
+				e.printStackTrace();
+			}
 		}
 		
 		//Opens serial port, receives data, converts to String, and passes to Observable
@@ -60,6 +96,7 @@ public class SerialPortReader implements Runnable
 			{
 				serialPort.openPort();
 				serialPort.setParams(9600, 8, 1, 0);//always setParams after opening port
+				//setParameters();
 
 				String input = "";
 				
@@ -83,6 +120,9 @@ public class SerialPortReader implements Runnable
 		String initialMessage = "";
 		
 	    String[] portNames = SerialPortList.getPortNames();
+	    for(String s : portNames)
+	    	listPortNames.add(s);
+	    
 
 	    if(portNames.length > 0)
 	    {
@@ -100,8 +140,7 @@ public class SerialPortReader implements Runnable
 		view = new TextAreaView(sdmodel);
 		sdmodel.setData(initialMessage);
 		serialPort = new SerialPort(comPort);
-		
-		spi = new SerialPortInfo(comPort, 9600, 8, 1, 0); //Unnecessary?
+		spi = new SerialPortInfo(comPort, 9600, 8, 1, 0); //set to default values
 
 		//build GUI
 		JFrame frame = new JFrame("Serial Data Reader");
@@ -109,19 +148,38 @@ public class SerialPortReader implements Runnable
 		frame.setLayout(new BorderLayout());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		JComboBox<String> comPortComboBox = new JComboBox<String>();
-		JComboBox<Integer> baudRateComboBox = new JComboBox<Integer>();
-		JComboBox<Integer> dataBitsComboBox = new JComboBox<Integer>();
-		JComboBox<Integer> stopBitsComboBox = new JComboBox<Integer>();
-		JComboBox<Integer> parityComboBox = new JComboBox<Integer>();
+		comPortComboBox = new JComboBox<String>();
+		for(String s : portNames)
+			comPortComboBox.addItem(s);
+		comPortComboBox.setSelectedItem(comPort);
+		
+		baudRateComboBox = new JComboBox<Integer>();
+		for(int i : baudRates)
+			baudRateComboBox.addItem(i);
+		baudRateComboBox.setSelectedItem(9600);
+			
+		dataBitsComboBox = new JComboBox<Integer>();
+		for(int i : dataBits)
+			dataBitsComboBox.addItem(i);
+		dataBitsComboBox.setSelectedItem(8);
+			
+		stopBitsComboBox = new JComboBox<Integer>();
+		for(int i : stopBits)
+			stopBitsComboBox.addItem(i);
+		stopBitsComboBox.setSelectedItem(1);
+		
+		parityComboBox = new JComboBox<Integer>();
+		for(int i : parityBits)
+			parityComboBox.addItem(i);
+		parityComboBox.setSelectedItem(0);
+		
 		JButton applySettingsButton = new JButton("Apply Settings");
 		applySettingsButton.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent e)
 					{
-						int i = comPortComboBox.getSelectedIndex();
-						spi = new SerialPortInfo(comPort, 9600, 8, 1, 0); //Unnecessary?
+						setParameters();
 					}
 				});
 		
@@ -159,12 +217,27 @@ public class SerialPortReader implements Runnable
 		menuBar.add(menu);
 		
 		//a group of JMenuItems
-		JMenuItem menuItem = new JMenuItem("Exit",
-		                         KeyEvent.VK_X);
+		JMenuItem menuItem = new JMenuItem("Exit", KeyEvent.VK_X);
+		
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(
-		        KeyEvent.VK_1, ActionEvent.ALT_MASK));
+		        		KeyEvent.VK_1, ActionEvent.ALT_MASK));
+		
 		menuItem.getAccessibleContext().setAccessibleDescription(
-		        "This doesn't really do anything");
+		        "Exits the application");
+		
+		menuItem.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				if(serialPort.isOpened())
+					try {
+						serialPort.closePort();
+					} catch (SerialPortException e1) {
+						e1.printStackTrace();
+					}
+				System.exit(0); //exit the application
+			}
+		});
 		menu.add(menuItem);
 		
 		//Build second menu in the menu bar.
