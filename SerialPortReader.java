@@ -4,6 +4,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -14,10 +15,18 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+
 import jssc.SerialPort;
 import jssc.SerialPortException;
+import jssc.SerialPortList;
 
 /*
+ /*
+ * Frank Mock
+ * Last Updated March 13, 2016
+ * 
+ * A simple GUI program to receive serial data from a serial port.
+ * 
  * This project uses the Java Simple Serial Connector library
  * https://github.com/scream3r/java-simple-serial-connector.git
  * 
@@ -29,22 +38,70 @@ import jssc.SerialPortException;
  */
 
 //GUI setup and serial port info initialization
-public class SerialPortReader
+public class SerialPortReader implements Runnable
 {
+		static String comPort;
 		static SerialSubject sdmodel;
 		static TextAreaView view;
 		static SerialPort serialPort;
-		
 		static SerialPortInfo spi; //Unnecessary?
+		
+		//Starts the thread that will initiate the reception of serial data
+		public void run()
+		{
+			getSerialData();
+		}
+		
+		//Opens serial port, receives data, converts to String, and passes to Observable
+		static void getSerialData()
+		{
+			BytesToString bts = new BytesToString();
+			try
+			{
+				serialPort.openPort();
+				serialPort.setParams(9600, 8, 1, 0);//always setParams after opening port
 
+				String input = "";
+				
+				while(serialPort.isOpened())
+				{
+					byte[] i = serialPort.readBytes(1);
+					input += bts.asciiToString(bts.valueOfByte(i[0]));
+					System.out.println(input);
+					sdmodel.setData(input);
+				}
+			}
+			catch(SerialPortException ex)
+			{
+				System.out.println(ex);
+			}
+		}
 
+	//Beginning of Main program
 	public static void main(String[] args)
 	{
+		String initialMessage = "";
+		
+	    String[] portNames = SerialPortList.getPortNames();
+
+	    if(portNames.length > 0)
+	    {
+	    	comPort = portNames[0]; //assign first port to comPort (allow user to choose in later update)
+			initialMessage = "Connected to " 
+					+ comPort + System.getProperty("line.separator")
+					+ "Press RX Data button below to receive data.";
+	    }
+	    else
+	    {
+			initialMessage = "Not connected to a serial port";
+	    }
+		
 		sdmodel = new SerialSubject();
 		view = new TextAreaView(sdmodel);
-		serialPort = new SerialPort("COM3");
+		sdmodel.setData(initialMessage);
+		serialPort = new SerialPort(comPort);
 		
-		spi = new SerialPortInfo("COM3", 1200, 8, 1, 0); //Unnecessary?
+		spi = new SerialPortInfo(comPort, 9600, 8, 1, 0); //Unnecessary?
 
 		//build GUI
 		JFrame frame = new JFrame("Serial Data Reader");
@@ -64,7 +121,7 @@ public class SerialPortReader
 					public void actionPerformed(ActionEvent e)
 					{
 						int i = comPortComboBox.getSelectedIndex();
-						spi = new SerialPortInfo("COM3", 1200, 8, 1, 0); //Unnecessary?
+						spi = new SerialPortInfo(comPort, 9600, 8, 1, 0); //Unnecessary?
 					}
 				});
 		
@@ -117,12 +174,19 @@ public class SerialPortReader
 		        "This menu does nothing");
 		menuBar.add(menu2);
 		
-		JMenuItem menuItem2 = new JMenuItem("Settings",
+		JMenuItem menuItem2 = new JMenuItem("Receive Serial Data",
                 KeyEvent.VK_S);
 		menuItem2.setAccelerator(KeyStroke.getKeyStroke(
 				KeyEvent.VK_1, ActionEvent.ALT_MASK));
 		menuItem2.getAccessibleContext().setAccessibleDescription(
-				"This doesn't really do anything");
+				"Get Serial Data");
+		menuItem2.addActionListener(new ActionListener()
+				{
+					public void actionPerformed(ActionEvent e)
+					{
+						(new Thread(new SerialPortReader())).start();
+					}
+				});
 		menu2.add(menuItem2);
 		
 		//Build third menu in the menu bar.
@@ -142,58 +206,63 @@ public class SerialPortReader
 		
 		
 		
-		
-		JButton getDataButton = new JButton("Get Data");
+		/*
+		 * Button pressed starts the thread that reads serial data
+		 * from serial port
+		 */
+		JButton getDataButton = new JButton("RX Data");
 		getDataButton.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ae)
 					{
-						try
-						{
-							serialPort.openPort();
-							serialPort.setParams(9600, 8, 1, 0);
-							while(serialPort.isOpened())
-							{
-								//send data to the model (aka subject)
-								sdmodel.setData(serialPort.readString());
-							}
-							//serialPort.closePort();//Close serial port
-						}
-						catch(SerialPortException ex)
-						{
-							System.out.println(ex);
-						}
+						(new Thread(new SerialPortReader())).start();
 					}
 				});
 		
-		JButton clearDataButton = new JButton("Stop/Clear");
-		clearDataButton.addActionListener(
+		/*
+		 * Button pressed closes the currently opened serial port
+		 */
+		JButton stopDataButton = new JButton("Stop");
+		stopDataButton.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ae)
 					{
-						try
+						if(serialPort.isOpened())
 						{
-							serialPort.closePort();
+							try
+							{
+								serialPort.closePort();
+							}
+							catch (SerialPortException e) {
+								e.printStackTrace();
+							}
 						}
-						catch (SerialPortException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
+					}
+				});
+		
+		/*
+		 * Clears the text area (the view is cleared)
+		 */
+		JButton clearButton = new JButton("Clear");
+		clearButton.addActionListener(
+				new ActionListener()
+				{
+					public void actionPerformed(ActionEvent ae)
+					{
 						//clear serial data text
 						view.clear();
 					}
 				});
-		
 			
 		Box box1 = Box.createVerticalBox();
 		box1.add(view);
 		
 		Box box2 = Box.createHorizontalBox();
 		box2.add(getDataButton);
-		box2.add(clearDataButton);
+		box2.add(stopDataButton);
+		box2.add(clearButton);
 				
 		frame.add(settingsPanel, BorderLayout.NORTH);
 		frame.add(box1, BorderLayout.CENTER);
