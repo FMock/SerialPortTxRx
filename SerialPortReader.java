@@ -22,10 +22,9 @@ import jssc.SerialPort;
 import jssc.SerialPortException;
 import jssc.SerialPortList;
 
-/*
- /*
+ /**
  * Frank Mock
- * Last Updated March 13, 2016
+ * Last Updated March 16, 2016
  * 
  * A simple GUI program to receive serial data from a serial port.
  * 
@@ -69,23 +68,19 @@ public class SerialPortReader implements Runnable
 			getSerialData();
 		}
 		
+		/**
+		 * Adjusts the SerialPortInfo object parameters to comboBox user choices.
+		 * Settings take affect the next time the serial port is opened.
+		 */
 		public static void setParameters()
 		{
-			int i = comPortComboBox.getSelectedIndex();
-			int j = baudRateComboBox.getSelectedIndex();
-			int k = dataBitsComboBox.getSelectedIndex();
-			int l = stopBitsComboBox.getSelectedIndex();
-			int m = parityComboBox.getSelectedIndex();
-			spi = new SerialPortInfo(listPortNames.get(i), baudRates[j], dataBits[k], stopBits[l], parityBits[m]);
-			try
-			{
-				serialPort.setParams(spi.getBaudRate(), spi.getDataBits(), 
-				         			 spi.getParity(), spi.getStopBits());
-			}
-			catch (SerialPortException e)
-			{
-				e.printStackTrace();
-			}
+			spi.setCommPort(listPortNames.get(comPortComboBox.getSelectedIndex()));
+			spi.setBaudRate(baudRates[baudRateComboBox.getSelectedIndex()]);
+			spi.setDataBits(dataBits[dataBitsComboBox.getSelectedIndex()]);
+			spi.setStopBits(stopBits[stopBitsComboBox.getSelectedIndex()]);
+			spi.setParity(parityBits[parityComboBox.getSelectedIndex()]);
+			
+			sdmodel.setData(spi.toString()); //Send new settings to view for display
 		}
 		
 		//Opens serial port, receives data, converts to String, and passes to Observable
@@ -95,9 +90,10 @@ public class SerialPortReader implements Runnable
 			try
 			{
 				serialPort.openPort();
-				serialPort.setParams(9600, 8, 1, 0);//always setParams after opening port
-				//setParameters();
-
+				//JSSC API requires calling setParams after opening port (not in reverse order)
+				setParameters();
+				serialPort.setParams(spi.getBaudRate(), spi.getDataBits(), spi.getStopBits(), spi.getParity());
+				
 				String input = "";
 				
 				while(serialPort.isOpened())
