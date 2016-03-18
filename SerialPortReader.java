@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -15,16 +14,16 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-
+import javax.swing.ScrollPaneConstants;
 import jssc.SerialPort;
 import jssc.SerialPortException;
 import jssc.SerialPortList;
 
  /**
  * Frank Mock
- * Last Updated March 16, 2016
+ * Last Updated March 18, 2016
  * 
  * A simple GUI program to receive serial data from a serial port.
  * 
@@ -324,9 +323,17 @@ public class SerialPortReader implements Runnable
 						view.clear();
 					}
 				});
-			
+		
+		//Create a box to hold the view in which the serial data will be displayed
 		Box box1 = Box.createVerticalBox();
-		box1.add(view);
+		
+		//Add vertical scroll bar to view
+		JScrollPane jScrollPane = new JScrollPane();
+		jScrollPane.getViewport().add(view);
+		jScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		
+		//Add the Scroll Pane that contains the view to box1
+		box1.add(jScrollPane);
 		
 		Box box2 = Box.createHorizontalBox();
 		box2.add(getDataButton);
