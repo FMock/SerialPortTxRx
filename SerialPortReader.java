@@ -1,10 +1,14 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -15,15 +19,17 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+
 import jssc.SerialPort;
 import jssc.SerialPortException;
 import jssc.SerialPortList;
 
  /**
  * Frank Mock
- * Last Updated March 18, 2016
+ * Last Updated March 25, 2016
  * 
  * A simple GUI program to receive serial data from a serial port.
  * 
@@ -43,6 +49,7 @@ public class SerialPortReader implements Runnable
 		static String comPort;
 		static SerialSubject sdmodel;
 		static TextAreaView view;
+		static JTextArea output;
 		static SerialPort serialPort;
 		static SerialPortInfo spi;
 		static JComboBox<Integer> baudRateComboBox;
@@ -50,6 +57,9 @@ public class SerialPortReader implements Runnable
 		static JComboBox<Integer> dataBitsComboBox;
 		static JComboBox<Integer> stopBitsComboBox;
 		static JComboBox<Integer> parityComboBox;
+		static JButton getDataButton;
+		static JButton stopDataButton;
+		static JLabel txMessage;
 		static ArrayList<String> listPortNames = new ArrayList<String>();
 		
 		//The available baud rates
@@ -88,11 +98,13 @@ public class SerialPortReader implements Runnable
 			BytesToString bts = new BytesToString();
 			try
 			{
+				stopDataButton.setEnabled(true);//enable the stop button so the RX can be stopped
+				getDataButton.setEnabled(false);
 				serialPort.openPort();
 				//JSSC API requires calling setParams after opening port (not in reverse order)
 				setParameters();
 				serialPort.setParams(spi.getBaudRate(), spi.getDataBits(), spi.getStopBits(), spi.getParity());
-				
+				txMessage.setText("");
 				String input = "";
 				
 				while(serialPort.isOpened())
@@ -148,6 +160,7 @@ public class SerialPortReader implements Runnable
 			comPortComboBox.addItem(s);
 		comPortComboBox.setSelectedItem(comPort);
 		
+		
 		baudRateComboBox = new JComboBox<Integer>();
 		for(int i : baudRates)
 			baudRateComboBox.addItem(i);
@@ -168,7 +181,7 @@ public class SerialPortReader implements Runnable
 			parityComboBox.addItem(i);
 		parityComboBox.setSelectedItem(0);
 		
-		JButton applySettingsButton = new JButton("Apply Settings");
+		JButton applySettingsButton = new JButton("Apply");
 		applySettingsButton.addActionListener(
 				new ActionListener()
 				{
@@ -179,27 +192,25 @@ public class SerialPortReader implements Runnable
 				});
 		
 		JPanel settingsPanel = new JPanel();
-		Color ltBlue = new Color(100, 200, 200);
+		Color ltBlue = new Color(200, 220, 220); //Red, Green, Blue
 		settingsPanel.setBackground(ltBlue);
-		settingsPanel.setLayout(new GridLayout(4,5));
+		settingsPanel.setLayout(new GridLayout(4,6));
 		settingsPanel.add(new JLabel("COM Port"));
 		settingsPanel.add(new JLabel("Baud Rate"));
 		settingsPanel.add(new JLabel("Data Bits"));
 		settingsPanel.add(new JLabel("Stop Bits"));
 		settingsPanel.add(new JLabel("Parity"));
+		settingsPanel.add(new JLabel(""));
 		settingsPanel.add(comPortComboBox);
 		settingsPanel.add(baudRateComboBox);
 		settingsPanel.add(dataBitsComboBox);
 		settingsPanel.add(stopBitsComboBox);
 		settingsPanel.add(parityComboBox);
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
-		settingsPanel.add(new JLabel(""));
 		settingsPanel.add(applySettingsButton);
+		settingsPanel.add(new JLabel(""));
+		settingsPanel.add(new JLabel(""));
+		settingsPanel.add(new JLabel(""));
+		settingsPanel.add(new JLabel(""));
 		settingsPanel.add(new JLabel(""));
 		settingsPanel.add(new JLabel(""));
 		
@@ -235,6 +246,7 @@ public class SerialPortReader implements Runnable
 		});
 		menu.add(menuItem);
 		
+		
 		//Build second menu in the menu bar.
 		JMenu menu2 = new JMenu("Serial Port");
 		menu2.setMnemonic(KeyEvent.VK_P);
@@ -257,6 +269,7 @@ public class SerialPortReader implements Runnable
 				});
 		menu2.add(menuItem2);
 		
+		
 		//Build third menu in the menu bar.
 		JMenu menu3 = new JMenu("Help");
 		menu3.setMnemonic(KeyEvent.VK_H);
@@ -275,10 +288,10 @@ public class SerialPortReader implements Runnable
 		
 		
 		/*
-		 * Button pressed starts the thread that reads serial data
-		 * from serial port
+		 * Button pressed starts the thread that opens the serial port and 
+		 * reads serial data from the port
 		 */
-		JButton getDataButton = new JButton("RX Data");
+		getDataButton = new JButton("Open");
 		getDataButton.addActionListener(
 				new ActionListener()
 				{
@@ -287,11 +300,14 @@ public class SerialPortReader implements Runnable
 						(new Thread(new SerialPortReader())).start();
 					}
 				});
+		settingsPanel.add(getDataButton);
+		
 		
 		/*
 		 * Button pressed closes the currently opened serial port
 		 */
-		JButton stopDataButton = new JButton("Stop");
+		stopDataButton = new JButton("Close");
+		stopDataButton.setEnabled(false);
 		stopDataButton.addActionListener(
 				new ActionListener()
 				{
@@ -306,9 +322,13 @@ public class SerialPortReader implements Runnable
 							catch (SerialPortException e) {
 								e.printStackTrace();
 							}
+							stopDataButton.setEnabled(false);
+							getDataButton.setEnabled(true);
 						}
 					}
 				});
+		settingsPanel.add(stopDataButton);
+		
 		
 		/*
 		 * Clears the text area (the view is cleared)
@@ -323,6 +343,72 @@ public class SerialPortReader implements Runnable
 						view.clear();
 					}
 				});
+		settingsPanel.add(clearButton);
+		
+		
+		/*
+		 * The transmit panel will contain the components related to the
+		 * action of the user transmitting text out the serial port
+		 */
+		JPanel transmitPanel = new JPanel();
+		transmitPanel.setBackground(ltBlue);
+		transmitPanel.setLayout(new GridLayout(2,1));
+
+		/*
+		 * Transmits string out the serial port
+		 */
+		JButton sendButton = new JButton("Send");
+		sendButton.addActionListener(
+				new ActionListener()
+				{
+					public void actionPerformed(ActionEvent ae)
+					{
+						if(serialPort.isOpened())
+						{
+							//transmit text entered in output text area
+							try
+							{
+								String s = output.getText();
+								serialPort.writeBytes(s.getBytes());
+							}
+							catch (SerialPortException e)
+							{
+								System.out.println(e.getMessage());
+							}
+						}
+						else
+						{
+							txMessage.setText("Serial Port Not Open");
+						}
+					}
+				});	
+
+		
+		/*
+		 * output is the text area that the user types text into to
+		 * transmit out the serial port
+		 */
+		output = new JTextArea();
+		output.setText("F");
+		output.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+		
+		Box box4 = Box.createHorizontalBox();
+		Component horzSpace = Box.createHorizontalStrut(10);
+		box4.add(horzSpace);
+		box4.add(new JLabel("Enter Text Below To Transmit"));
+		Component horzSpace2 = Box.createHorizontalStrut(30);
+		box4.add(horzSpace2);
+		box4.add(sendButton);
+		Component horzSpace3 = Box.createHorizontalStrut(30);
+		box4.add(horzSpace3);
+		txMessage = new JLabel(""); //Used to display message if port is not open
+		txMessage.setForeground(Color.RED);
+		txMessage.setFont(new Font("Arial", Font.BOLD, 16));
+		box4.add(txMessage);
+		Box box5 = Box.createHorizontalBox();
+		box5.add(output);
+		transmitPanel.add(box4);
+		transmitPanel.add(box5);
 		
 		//Create a box to hold the view in which the serial data will be displayed
 		Box box1 = Box.createVerticalBox();
@@ -334,15 +420,13 @@ public class SerialPortReader implements Runnable
 		
 		//Add the Scroll Pane that contains the view to box1
 		box1.add(jScrollPane);
-		
-		Box box2 = Box.createHorizontalBox();
-		box2.add(getDataButton);
-		box2.add(stopDataButton);
-		box2.add(clearButton);
 				
+		Box box3 = Box.createHorizontalBox();
+		box3.add(transmitPanel);
+		
 		frame.add(settingsPanel, BorderLayout.NORTH);
 		frame.add(box1, BorderLayout.CENTER);
-		frame.add(box2, BorderLayout.SOUTH);		
+		frame.add(box3, BorderLayout.SOUTH);
 
 		frame.setJMenuBar(menuBar);
 		frame.setVisible(true);
