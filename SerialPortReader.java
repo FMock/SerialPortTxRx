@@ -17,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -29,18 +30,28 @@ import jssc.SerialPortList;
 
  /**
  * Frank Mock
- * Last Updated March 25, 2016
+ * Last Updated December 21, 2016
  * 
  * A simple GUI program to receive serial data from a serial port.
  * 
  * This project uses the Java Simple Serial Connector library
+ * File name is jssc.jar
  * https://github.com/scream3r/java-simple-serial-connector.git
  * 
- * Usage: copy jssc.jar to your ..\java\jdk1.8._25\lib\ext
- * and add the jar file to the project build path
- * In Eclipse go to Project\Properties\Java Build Path
- * on the Libraries tab click Add External Jars 
- * and browse to where the jssc.jar folder is located
+ * Usage: 
+ * 2 options to include jssc.jar
+ * 1) copy jssc.jar to your ..\java\jdk1.8._25\lib\ext
+ * 	  and add the jar file to the project build path by
+ *    doing the following. In Eclipse go to 
+ *    Project\Properties\Java Build Path, then
+ *    on the Libraries tab click Add External Jars 
+ *    and browse to where the jssc.jar folder is located
+ *    
+ *    or
+ *    
+ * 2) In Eclipse IDE, paste jscc.jar into your project. Right-
+ *    click on the jar file, the select Build Path > Add To
+ *    Build Path.
  */
 
 //GUI setup and serial port info initialization
@@ -283,6 +294,19 @@ public class SerialPortReader implements Runnable
 				KeyEvent.VK_1, ActionEvent.ALT_MASK));
 		menuItem3.getAccessibleContext().setAccessibleDescription(
 				"This doesn't really do anything");
+		
+		/* Display message dialog box when user clicks on
+		 * the About menu item.
+		 */
+		menuItem3.addActionListener(new ActionListener(){
+        	public void actionPerformed(ActionEvent e){
+        		JOptionPane.showMessageDialog(frame,
+        				"Version 0.01 \n by Frank Mock 2016\n"
+        				+ "http://www.frankmock.com",
+        				"Serial Data Reader",
+        				JOptionPane.PLAIN_MESSAGE);
+        	}});
+		
 		menu3.add(menuItem3);
 		
 		
