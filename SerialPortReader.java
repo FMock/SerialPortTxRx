@@ -147,7 +147,7 @@ public class SerialPortReader implements Runnable
 	    	comPort = portNames[0]; //assign first port to comPort (allow user to choose in later update)
 			initialMessage = "Connected to " 
 					+ comPort + System.getProperty("line.separator")
-					+ "Press RX Data button below to receive data.";
+					+ "Press the Open button to receive data.";
 	    }
 	    else
 	    {
