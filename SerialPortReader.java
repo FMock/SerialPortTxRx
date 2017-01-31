@@ -30,7 +30,7 @@ import jssc.SerialPortList;
 
  /**
  * Frank Mock
- * Last Updated December 21, 2016
+ * Last Updated January 31, 2017
  * 
  * A simple GUI program to receive serial data from a serial port.
  * 
@@ -94,7 +94,12 @@ public class SerialPortReader implements Runnable
 		 */
 		public static void setParameters()
 		{
-			spi.setCommPort(listPortNames.get(comPortComboBox.getSelectedIndex()));
+			String[] portNames = SerialPortList.getPortNames();
+			// Set COM port if there is one available - will be NULL otherwise by default
+			if(portNames.length != 0){
+				spi.setCommPort(listPortNames.get(comPortComboBox.getSelectedIndex()));
+			}
+			
 			spi.setBaudRate(baudRates[baudRateComboBox.getSelectedIndex()]);
 			spi.setDataBits(dataBits[dataBitsComboBox.getSelectedIndex()]);
 			spi.setStopBits(stopBits[stopBitsComboBox.getSelectedIndex()]);
@@ -109,6 +114,14 @@ public class SerialPortReader implements Runnable
 			BytesToString bts = new BytesToString();
 			try
 			{
+				String[] portNames = SerialPortList.getPortNames();
+				
+				// If there are no serial ports then return
+				if(portNames.length == 0){
+					sdmodel.setData("ERROR, NO SERIAL PORTS FOUND.");
+					return;
+				}
+
 				stopDataButton.setEnabled(true);//enable the stop button so the RX can be stopped
 				getDataButton.setEnabled(false);
 				serialPort.openPort();
